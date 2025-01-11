@@ -23,15 +23,22 @@ class HashMap {
       set(key, value) {
         let hashKey = this.hash(key);
 
-        //check 
+        //check load levels and keys already existing 
         if(this.#buckets[hashKey] !== undefined){
             this.#head = this.#buckets[hashKey];
             
             while(this.#head.next !== null){
-                //if key already exist, update with new key
-                if(this.#head.key === key) this.#head.value = value;
-
+                //update if the key/value pair is not the first occurence in the bucket
+                if(this.#head.key === key){
+                    this.#head.value = value;
+                    return;
+                } 
                 this.#head = this.#head.next;
+            }
+            //update if there's only one key/value pair in the bucket
+            if(this.#head.key === key){
+                this.#head.value = value;
+                return;
             }
             this.#head.next = new Node(hashKey, key, value, null);
 
@@ -93,7 +100,6 @@ class HashMap {
         return keyCount;
     }
 
-    //check
     clear() {
         this.#buckets = [];
     }
@@ -132,7 +138,6 @@ class HashMap {
         return allValues;
     }
 
-    //keys and values
     entries() {
         let allKeysAndValues = [];
 
