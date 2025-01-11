@@ -1,15 +1,14 @@
-import { Node } from "./node";
+import { Node } from "./node.js";
 
 class HashMap {
     #buckets = [];
     #head = null;
-    #loadFactor = 0.8;
+    #loadFactor = 0.75;
     #capacity = 16;
 
     constructor() {
     }
 
-    //done
     hash(key) {
         let hashCode = 0;
            
@@ -24,17 +23,17 @@ class HashMap {
       set(key, value) {
         let hashKey = this.hash(key);
 
-        //done 
+        //check 
         if(this.#buckets[hashKey] !== undefined){
             this.#head = this.#buckets[hashKey];
-
+            
             while(this.#head.next !== null){
-                this.#head = this.#head.next;
-
                 //if key already exist, update with new key
                 if(this.#head.key === key) this.#head.value = value;
+
+                this.#head = this.#head.next;
             }
-            this.#head = new Node(hashKey, key, value, null);
+            this.#head.next = new Node(hashKey, key, value, null);
 
         } else {
             this.#buckets[hashKey] = new Node(hashKey, key, value, null);
@@ -42,13 +41,11 @@ class HashMap {
         this.#head = null;
     }
 
-    //done
     get(key) {
         let hashKey = this.hash(key);
         this.#head = this.#buckets[hashKey];
 
         if(this.#head.key === key){
-            this.#head = null;
             return this.#head.value;
         } else {
             while(this.#head.next !== null){
@@ -58,14 +55,12 @@ class HashMap {
                     return this.#head.value;
                 }
             }
-            this.#head = null;
             return null;
         }
     }
 
-    //done
     has(key){
-        let hashKey = this.hashKey(key);
+        let hashKey = this.hash(key);
         this.#head = this.#buckets[hashKey];
 
         if(this.#head.key === key){
@@ -81,14 +76,26 @@ class HashMap {
             return false;
         }
     }
+    
+    length(){
+        let keyCount = 0;
 
-    //done
+        for(let i = 0; i < this.#buckets.length; i++){
+            let bucketInd = this.#buckets[i];
+            if(bucketInd !== undefined){
+                while(bucketInd.next !== null){
+                   keyCount++;
+                   bucketInd = bucketInd.next;
+                }
+                keyCount++;
+            }
+        }
+        return keyCount;
+    }
+
+    //check
     clear() {
         this.#buckets = [];
-
-        //check if i need to change anything with loadfactor
-        this.#loadFactor = 0.8;
-        this.#capacity = 16;
     }
 
     keys(){
@@ -98,22 +105,50 @@ class HashMap {
             let bucketInd = this.#buckets[i];
 
             if(bucketInd !== undefined){
-                //store the keys only
                 while(bucketInd.next !== null){
-                    //store key here;
+                    allKeys.push(bucketInd.key);
+                    bucketInd = bucketInd.next;
                 }
-                //store the last key;
+                allKeys.push(bucketInd.key);
             }
-
         }
+        return allKeys;
     }
 
     values() {
+        let allValues = [];
 
+        for(let i = 0; i < this.#buckets.length; i++){
+            let bucketInd = this.#buckets[i];
+
+            if(bucketInd !== undefined){
+                while(bucketInd.next !== null){
+                    allValues.push(bucketInd.value);
+                    bucketInd = bucketInd.next;
+                }
+                allValues.push(bucketInd.value);
+            }
+        }
+        return allValues;
     }
 
+    //keys and values
     entries() {
-        
+        let allKeysAndValues = [];
+
+        for(let i = 0; i < this.#buckets.length; i++){
+            let bucketInd = this.#buckets[i];
+
+            if(bucketInd !== undefined){
+                while(bucketInd.next !== null){
+                    allKeysAndValues.push([bucketInd.key, bucketInd.value]);
+                    bucketInd = bucketInd.next;
+                }
+                allKeysAndValues.push([bucketInd.key, bucketInd.value]);
+            }
+        } 
+        return allKeysAndValues;
     }
-     
 }
+
+export {HashMap};
