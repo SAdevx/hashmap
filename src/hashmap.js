@@ -5,6 +5,7 @@ class HashMap {
     #head = null;
     #loadFactor = 0.75;
     #capacity = 16;
+    #entriesCount = 0; 
 
     constructor() {
     }
@@ -14,43 +15,69 @@ class HashMap {
            
         const primeNumber = 31;
         for (let i = 0; i < key.length; i++) {
-          hashCode = (primeNumber * hashCode + key.charCodeAt(i)) % key.length;
+          hashCode = (primeNumber * hashCode + key.charCodeAt(i)) % this.#capacity;
         }
-     
+        console.log(key,hashCode);
         return hashCode;
-      } 
+    }
 
-      set(key, value) {
-        let hashKey = this.hash(key);
+    //only problem now is moving the index to the right place
+    // or either move it into the growth factor to populate it 
+    set(key, value) {
+        let index = this.hash(key);
 
-        //check load levels and keys already existing 
-        if(this.#buckets[hashKey] !== undefined){
-            this.#head = this.#buckets[hashKey];
+        if(index < 0 || index >= this.#capacity){
+            throw new Error("Trying to access index out of bounds");
+        } 
+              
+        if(this.#buckets[index] !== undefined){
+            this.#head = this.#buckets[index];
             
-            while(this.#head.next !== null){
+            //start traversing the linked list if its not the first node
+            while(this.#head !== null){
                 //update if the key/value pair is not the first occurence in the bucket
-                if(this.#head.key === key){
+                if(this.#head.key === key ){
                     this.#head.value = value;
                     return;
                 } 
                 this.#head = this.#head.next;
             }
             //update if there's only one key/value pair in the bucket
-            if(this.#head.key === key){
+            if(this.#head.key === key && this.#head.hashCode === index){
                 this.#head.value = value;
                 return;
             }
-            this.#head.next = new Node(hashKey, key, value, null);
 
+            if(this.handleHashMapGrowth()){
+                //store it in new index if load level has been exceeded
+                index = this.hash(key);
+    
+                this.#head = this.#buckets[index];
+
+                if(this.#head === undefined) {
+                    this.#buckets[index] = new Node(index, key, value, null);
+                    return;
+                }
+                while(this.#head.next !== null){
+                    this.#head = this.#head.next;
+                }
+                this.#head.next = new Node(index, key, value, null);
+            } else {
+                this.#head.next = new Node(index, key, value, null);
+            }
         } else {
-            this.#buckets[hashKey] = new Node(hashKey, key, value, null);
+            if(this.handleHashMapGrowth()){
+                index = this.hash(key);
+                this.#buckets[index] = new Node(index, key, value, null);
+            } else {
+                this.#buckets[index] = new Node(index, key, value, null);
+            }
         }
-        this.#head = null;
     }
 
     get(key) {
-        let hashKey = this.hash(key);
-        this.#head = this.#buckets[hashKey];
+        let index = this.hash(key);
+        this.#head = this.#buckets[index];
 
         if(this.#head.key === key){
             return this.#head.value;
@@ -67,8 +94,8 @@ class HashMap {
     }
 
     has(key){
-        let hashKey = this.hash(key);
-        this.#head = this.#buckets[hashKey];
+        let index = this.hash(key);
+        this.#head = this.#buckets[index];
 
         if(this.#head.key === key){
             return true;
@@ -102,6 +129,7 @@ class HashMap {
 
     clear() {
         this.#buckets = [];
+        this.#capacity = 16;
     }
 
     keys(){
@@ -153,6 +181,38 @@ class HashMap {
             }
         } 
         return allKeysAndValues;
+    }
+
+    handleHashMapGrowth(){
+        this.#entriesCount++;
+        let loadLevel = Math.round(this.#loadFactor * this.#capacity);
+
+        if(loadLevel < this.#entriesCount){
+            this.#capacity *= 2;
+            let tmpBucketArr = [];
+            let newIndex = undefined;
+    
+            for(let i = 0; i < this.#buckets.length; i++){
+                let node = this.#buckets[i];
+    
+                if(node === undefined) continue;
+    
+                //multiple nodes in the bucket
+                while(node.next !== null){
+                    newIndex = this.hash(node.key);
+                   // console.log(node.key,newIndex)
+                    tmpBucketArr[newIndex] = new Node(newIndex, node.key, node.value, node.next);
+                    node = node.next;
+                }
+                //only node in the bucket
+                newIndex = this.hash(node.key);
+               // console.log(node.key,newIndex)
+                tmpBucketArr[newIndex] =  new Node(newIndex, node.key, node.value, node.next);
+            }
+            this.#buckets = tmpBucketArr;
+            return true;
+        }
+        return false;
     }
 }
 

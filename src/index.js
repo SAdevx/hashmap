@@ -15,7 +15,7 @@ test.set('jacket', 'blue')
 test.set('kite', 'pink')
 test.set('lion', 'golden')
 
-console.log(test.length());
+console.log(test.length()); 
 
 test.set('frog', 'me')
 test.set('grape', 'me')
@@ -24,8 +24,11 @@ test.set('ice cream', 'me')
 test.set('jacket', 'me')
 test.set('kite', 'me')
 test.set('lion', 'me')
+test.set('moon', 'silver');
 
-console.log(test.length());
+console.log(test.entries());
+console.log("after",test.length()); 
 
-
- 
+console.log(test.keys());
+test.clear();
+console.log(test.entries());
