@@ -17,12 +17,9 @@ class HashMap {
         for (let i = 0; i < key.length; i++) {
           hashCode = (primeNumber * hashCode + key.charCodeAt(i)) % this.#capacity;
         }
-        console.log(key,hashCode);
         return hashCode;
     }
 
-    //only problem now is moving the index to the right place
-    // or either move it into the growth factor to populate it 
     set(key, value) {
         let index = this.hash(key);
 
@@ -33,45 +30,23 @@ class HashMap {
         if(this.#buckets[index] !== undefined){
             this.#head = this.#buckets[index];
             
-            //start traversing the linked list if its not the first node
             while(this.#head !== null){
-                //update if the key/value pair is not the first occurence in the bucket
                 if(this.#head.key === key ){
                     this.#head.value = value;
                     return;
                 } 
                 this.#head = this.#head.next;
             }
-            //update if there's only one key/value pair in the bucket
-            if(this.#head.key === key && this.#head.hashCode === index){
-                this.#head.value = value;
-                return;
-            }
-
-            if(this.handleHashMapGrowth()){
-                //store it in new index if load level has been exceeded
-                index = this.hash(key);
-    
-                this.#head = this.#buckets[index];
-
-                if(this.#head === undefined) {
-                    this.#buckets[index] = new Node(index, key, value, null);
-                    return;
-                }
-                while(this.#head.next !== null){
-                    this.#head = this.#head.next;
-                }
-                this.#head.next = new Node(index, key, value, null);
-            } else {
-                this.#head.next = new Node(index, key, value, null);
-            }
+            this.#entriesCount++;
+            this.handleHashMapGrowth();
+            index = this.hash(key);
+            let newNode = new Node(index, key, value, this.#buckets[index]);
+            this.#buckets[index] = newNode;
         } else {
-            if(this.handleHashMapGrowth()){
-                index = this.hash(key);
-                this.#buckets[index] = new Node(index, key, value, null);
-            } else {
-                this.#buckets[index] = new Node(index, key, value, null);
-            }
+            this.#entriesCount++;
+            this.handleHashMapGrowth();
+            index = this.hash(key);
+            this.#buckets[index] = new Node(index, key, value, null);
         }
     }
 
@@ -112,19 +87,7 @@ class HashMap {
     }
     
     length(){
-        let keyCount = 0;
-
-        for(let i = 0; i < this.#buckets.length; i++){
-            let bucketInd = this.#buckets[i];
-            if(bucketInd !== undefined){
-                while(bucketInd.next !== null){
-                   keyCount++;
-                   bucketInd = bucketInd.next;
-                }
-                keyCount++;
-            }
-        }
-        return keyCount;
+        return this.#entriesCount;
     }
 
     clear() {
@@ -184,35 +147,31 @@ class HashMap {
     }
 
     handleHashMapGrowth(){
-        this.#entriesCount++;
-        let loadLevel = Math.round(this.#loadFactor * this.#capacity);
+        let loadLevel = this.#loadFactor * this.#capacity;
 
         if(loadLevel < this.#entriesCount){
             this.#capacity *= 2;
             let tmpBucketArr = [];
-            let newIndex = undefined;
+            let index = undefined;
     
             for(let i = 0; i < this.#buckets.length; i++){
                 let node = this.#buckets[i];
-    
-                if(node === undefined) continue;
-    
-                //multiple nodes in the bucket
-                while(node.next !== null){
-                    newIndex = this.hash(node.key);
-                   // console.log(node.key,newIndex)
-                    tmpBucketArr[newIndex] = new Node(newIndex, node.key, node.value, node.next);
-                    node = node.next;
+                let head = null;
+                
+                while(node != null){
+                    let currNode = null;
+                
+                    index = this.hash(node.key);
+                    head = node.next;
+                    currNode = new Node(index,node.key,node.value,null);
+                    currNode.next = tmpBucketArr[index];
+                    tmpBucketArr[index] = currNode;
+
+                    node = head;
                 }
-                //only node in the bucket
-                newIndex = this.hash(node.key);
-               // console.log(node.key,newIndex)
-                tmpBucketArr[newIndex] =  new Node(newIndex, node.key, node.value, node.next);
             }
             this.#buckets = tmpBucketArr;
-            return true;
         }
-        return false;
     }
 }
 
