@@ -2,7 +2,6 @@ import { Node } from "./node.js";
 
 class HashMap {
     #buckets = [];
-    #head = null;
     #loadFactor = 0.75;
     #capacity = 16;
     #entriesCount = 0; 
@@ -27,63 +26,80 @@ class HashMap {
             throw new Error("Trying to access index out of bounds");
         } 
               
-        if(this.#buckets[index] !== undefined){
-            this.#head = this.#buckets[index];
+        if(this.#buckets[index] != undefined){
+            let head = this.#buckets[index];
             
-            while(this.#head !== null){
-                if(this.#head.key === key ){
-                    this.#head.value = value;
+            while(head != null){
+                if(head.key === key ){
+                    head.value = value;
                     return;
                 } 
-                this.#head = this.#head.next;
+                head = head.next;
             }
             this.#entriesCount++;
             this.handleHashMapGrowth();
             index = this.hash(key);
-            let newNode = new Node(index, key, value, this.#buckets[index]);
+            let newNode = new Node(key, value, this.#buckets[index]);
             this.#buckets[index] = newNode;
         } else {
             this.#entriesCount++;
             this.handleHashMapGrowth();
             index = this.hash(key);
-            this.#buckets[index] = new Node(index, key, value, null);
+            this.#buckets[index] = new Node(key, value, null);
         }
     }
 
     get(key) {
         let index = this.hash(key);
-        this.#head = this.#buckets[index];
+        let head = this.#buckets[index];
 
-        if(this.#head.key === key){
-            return this.#head.value;
-        } else {
-            while(this.#head.next !== null){
-                this.#head = this.#head.next;
-
-                if(this.#head.key === key){
-                    return this.#head.value;
-                }
+        while(head != null){
+            if(head.key === key){
+                return head.value;
             }
-            return null;
+            head = head.next;
         }
+        return null;
     }
 
     has(key){
         let index = this.hash(key);
-        this.#head = this.#buckets[index];
+        let head = this.#buckets[index];
 
-        if(this.#head.key === key){
+        while(head != null){
+            if(head.key === key) {
+                return true;
+            }
+            head = head.next;
+        }
+        return false;
+    }
+
+    remove(key){
+        let index = this.hash(key);
+        let currNode = this.#buckets[index];
+
+        if(currNode === undefined) return false;
+
+        if(currNode.key === key){
+            this.#buckets[index] = currNode.next;
+            this.#entriesCount--;
             return true;
         } else {
-            while(this.#head.next !== null){
-                this.#head = this.#head.next;
+            let prevNode = currNode;
+            currNode = currNode.next;
 
-                if(this.#head.key === key) {
+            while(currNode != null){
+                if(currNode.key === key){
+                    prevNode.next = currNode.next;
+                    this.#entriesCount--;
                     return true;
                 }
+                prevNode = currNode;
+                currNode = currNode.next;
             }
-            return false;
         }
+        return false
     }
     
     length(){
@@ -93,20 +109,18 @@ class HashMap {
     clear() {
         this.#buckets = [];
         this.#capacity = 16;
+        this.#entriesCount = 0;
     }
 
     keys(){
         let allKeys = [];
 
         for(let i = 0; i < this.#buckets.length; i++){
-            let bucketInd = this.#buckets[i];
+            let currNode = this.#buckets[i];
 
-            if(bucketInd !== undefined){
-                while(bucketInd.next !== null){
-                    allKeys.push(bucketInd.key);
-                    bucketInd = bucketInd.next;
-                }
-                allKeys.push(bucketInd.key);
+            while(currNode != null){
+                allKeys.push(currNode.key);
+                currNode = currNode.next;
             }
         }
         return allKeys;
@@ -116,14 +130,11 @@ class HashMap {
         let allValues = [];
 
         for(let i = 0; i < this.#buckets.length; i++){
-            let bucketInd = this.#buckets[i];
+            let currNode = this.#buckets[i];
 
-            if(bucketInd !== undefined){
-                while(bucketInd.next !== null){
-                    allValues.push(bucketInd.value);
-                    bucketInd = bucketInd.next;
-                }
-                allValues.push(bucketInd.value);
+            while(currNode != null){
+                allValues.push(currNode.value);
+                currNode = currNode.next;
             }
         }
         return allValues;
@@ -133,14 +144,11 @@ class HashMap {
         let allKeysAndValues = [];
 
         for(let i = 0; i < this.#buckets.length; i++){
-            let bucketInd = this.#buckets[i];
+            let currNode = this.#buckets[i];
 
-            if(bucketInd !== undefined){
-                while(bucketInd.next !== null){
-                    allKeysAndValues.push([bucketInd.key, bucketInd.value]);
-                    bucketInd = bucketInd.next;
-                }
-                allKeysAndValues.push([bucketInd.key, bucketInd.value]);
+            while(currNode != null){
+                allKeysAndValues.push([currNode.key, currNode.value]);
+                currNode = currNode.next;
             }
         } 
         return allKeysAndValues;
@@ -153,7 +161,7 @@ class HashMap {
             this.#capacity *= 2;
             let tmpBucketArr = [];
             let index = undefined;
-    
+
             for(let i = 0; i < this.#buckets.length; i++){
                 let node = this.#buckets[i];
                 let head = null;
@@ -163,7 +171,7 @@ class HashMap {
                 
                     index = this.hash(node.key);
                     head = node.next;
-                    currNode = new Node(index,node.key,node.value,null);
+                    currNode = new Node(node.key,node.value,null);
                     currNode.next = tmpBucketArr[index];
                     tmpBucketArr[index] = currNode;
 
